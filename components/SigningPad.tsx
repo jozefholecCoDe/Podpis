@@ -5,6 +5,17 @@ import { usePdfDocument } from "@/lib/usePdfDocument";
 import { PdfCanvas } from "@/components/PdfCanvas";
 import type { SignatureBox } from "@/lib/types";
 
+/** Hrúbka ťahu v CSS pixeloch. */
+const SIGNATURE_LINE_WIDTH = 1.5;
+/** Farba atramentu. */
+const SIGNATURE_COLOR = "#0f172a";
+/**
+ * Podpis sa kreslí do plochy niekoľkonásobne väčšej, než akú vidno na
+ * obrazovke — výsledný PNG sa vkladá do PDF, kde by inak (najmä po vytlačení)
+ * bola tenká čiara zubatá.
+ */
+const SIGNATURE_SUPERSAMPLE = 4;
+
 export function SigningPad({
   fileUrl,
   box,
@@ -45,20 +56,20 @@ export function SigningPad({
   useEffect(() => {
     const canvas = sigCanvasRef.current;
     if (!canvas) return;
-    const dpr = window.devicePixelRatio || 1;
+    const scale = Math.max(window.devicePixelRatio || 1, SIGNATURE_SUPERSAMPLE);
     const w = Math.max(1, Math.round(boxPx.width));
     const h = Math.max(1, Math.round(boxPx.height));
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
+    canvas.width = Math.round(w * scale);
+    canvas.height = Math.round(h * scale);
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.scale(dpr, dpr);
-    ctx.lineWidth = 2.5;
+    ctx.scale(scale, scale);
+    ctx.lineWidth = SIGNATURE_LINE_WIDTH;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.strokeStyle = "#1d4ed8";
+    ctx.strokeStyle = SIGNATURE_COLOR;
     sigCtxRef.current = ctx;
     setHasDrawn(false);
   }, [boxPx.width, boxPx.height]);
