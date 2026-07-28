@@ -18,6 +18,27 @@ dá stiahnuť.
 Postavené na Next.js (App Router), `pdf-lib` (vkladanie podpisu do PDF), `pdfjs-dist`
 (zobrazenie PDF v prehliadači) a `nodemailer` (odoslanie emailu).
 
+## Spustenie jedným klikom (Windows)
+
+Pre bežné používanie bez terminálu slúžia dva súbory v hlavnom priečinku:
+
+- **`Spustit-Podpis.bat`** — dvojklikom sa vytvorí verejná adresa cez Cloudflare tunel,
+  zapíše sa do `.env.local`, spustí sa server a stránka sa otvorí v prehliadači. Okno
+  ostáva otvorené a zobrazuje adresu, ktorú je možné poslať aj na mobil. Stlačením Enter
+  sa všetko korektne vypne.
+- **`Zastavit-Podpis.bat`** — núdzové vypnutie, keď bolo okno zatvorené krížikom.
+
+Jednorazová príprava (stačí spraviť raz, na počítači, kde to bude bežať):
+
+```powershell
+winget install OpenJS.NodeJS.LTS Git.Git Cloudflare.cloudflared
+npm install
+copy .env.example .env.local   # a vyplniť SMTP údaje
+```
+
+Adresa tunela sa pri každom spustení mení — skript ju preto zakaždým prepíše sám.
+Odkazy na podpis odoslané pri predchádzajúcom behu prestanú po reštarte fungovať.
+
 ## Požiadavky
 
 - Node.js 20+
