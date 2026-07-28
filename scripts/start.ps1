@@ -5,6 +5,15 @@ $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $projectRoot
 
+# Starsie Windows PowerShell defaultuje na TLS 1.0, ktore Cloudflare odmieta -
+# bez tohto by overenie verejnej adresy zlyhalo aj vtedy, ked realne funguje.
+try {
+    [Net.ServicePointManager]::SecurityProtocol =
+        [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls11
+} catch {
+    # starsi .NET tieto hodnoty nepozna, pokracujeme s predvolenym nastavenim
+}
+
 $Host.UI.RawUI.WindowTitle = "Podpis dokumentov - server bezi"
 $pidFile = Join-Path $env:TEMP "podpis-pids.txt"
 $tunnelLog = Join-Path $env:TEMP "podpis-tunnel.log"
@@ -167,12 +176,20 @@ try {
     # by sa prehliadac otvoril na adrese, ktora este neexistuje.
     Show-Step "Overujem verejnu adresu, moze to trvat aj pol minuty..."
     $publicReady = $false
+    $lastError = ""
     for ($i = 0; $i -lt 30; $i++) {
         try {
             Invoke-WebRequest -Uri $publicUrl -UseBasicParsing -TimeoutSec 5 | Out-Null
             $publicReady = $true
             break
         } catch {
+            # Aj chybova HTTP odpoved (napr. 502, kym sa tunel dopaja) znamena,
+            # ze adresa uz existuje - vtedy staci pockat dlhsie.
+            $lastError = $_.Exception.Message
+            if ($tunnelProcess.HasExited) {
+                $lastError = "Spojenie s Cloudflare sa preruslo. Podrobnosti: $tunnelLog"
+                break
+            }
             Start-Sleep -Seconds 2
         }
     }
@@ -203,9 +220,12 @@ try {
         Write-Host "  Verejna adresa zatial neodpoveda:" -ForegroundColor Gray
         Write-Host "  $publicUrl" -ForegroundColor White
         Write-Host ""
-        Write-Host "  Skus ju o chvilu otvorit rucne - niekedy sa" -ForegroundColor Gray
-        Write-Host "  rozbehne az po minute. Ak ani potom nejde," -ForegroundColor Gray
-        Write-Host "  blokuje ju zrejme tvoj poskytovatel internetu." -ForegroundColor Gray
+        Write-Host "  Dovod:" -ForegroundColor Gray
+        Write-Host "  $lastError" -ForegroundColor DarkYellow
+        Write-Host ""
+        Write-Host "  Skus adresu otvorit rucne - niekedy sa rozbehne" -ForegroundColor Gray
+        Write-Host "  az po minute. Ak ani potom nejde, blokuje ju" -ForegroundColor Gray
+        Write-Host "  zrejme tvoj poskytovatel internetu." -ForegroundColor Gray
         Write-Host "  POZOR: odkazy v emailoch pouzivaju verejnu adresu," -ForegroundColor Yellow
         Write-Host "  takze kym nefunguje, nefunguju ani ony." -ForegroundColor Yellow
     }
