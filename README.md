@@ -13,10 +13,15 @@ Jednoduchá webová aplikácia na podpisovanie dokumentov:
 7. Na úvodnej stránke je zoznam všetkých dokumentov aj s ich stavom, takže sa k
    podpísaným dokumentom dá vrátiť aj po reštarte aplikácie.
 
-> **Pozor na súkromie:** aplikácia nemá prihlasovanie. Kto pozná adresu, na ktorej beží,
-> vidí na úvodnej stránke zoznam všetkých dokumentov a môže si podpísané stiahnuť.
-> Ak posielate odkaz na podpis klientom, dostanú adresu, z ktorej sa dá odvodiť aj
-> úvodná stránka.
+### Heslo
+
+Nahrávanie dokumentov a zoznam dokumentov sú chránené heslom, ktoré sa nastavuje
+položkou `APP_PASSWORD` v `.env.local`. Odkazy na podpis (`/sign/...`) zostávajú
+prístupné bez hesla — klient sa musí vedieť podpísať bez toho, aby ho poznal.
+
+Heslo sa zadáva raz a prehliadač si prihlásenie pamätá 30 dní. Zmena `APP_PASSWORD`
+automaticky odhlási všetky zariadenia. Ak `APP_PASSWORD` nevyplníte, aplikácia beží
+otvorene a upozorní na to na úvodnej stránke.
 
 Ak by odoslanie emailu s podpísaným dokumentom zlyhalo (napr. výpadok SMTP), podpis sa
 tým nezruší — dokument zostáva podpísaný, chyba sa zobrazí na stránke dokumentu a PDF sa

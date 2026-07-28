@@ -1,84 +1,36 @@
-"use client";
-
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { UploadArea } from "@/components/UploadArea";
 import { DocumentList } from "@/components/DocumentList";
+import { LogoutButton } from "@/components/LogoutButton";
 
-export default function UploadPage() {
-  const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [dragOver, setDragOver] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+// Heslo sa číta z .env.local pri každej požiadavke, aby sa jeho zmena
+// prejavila bez nutnosti aplikáciu znovu zostavovať.
+export const dynamic = "force-dynamic";
 
-  async function uploadFile(file: File) {
-    setUploading(true);
-    setError(null);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/documents", { method: "POST", body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Nahranie zlyhalo.");
-      router.push(`/documents/${data.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Nahranie zlyhalo.");
-      setUploading(false);
-    }
-  }
-
-  function handleFiles(files: FileList | null) {
-    const file = files?.[0];
-    if (file) uploadFile(file);
-  }
+export default function HomePage() {
+  const isProtected = Boolean(process.env.APP_PASSWORD);
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center gap-8 px-6 py-16">
-      <div className="text-center">
+      <div className="w-full text-center">
         <h1 className="text-3xl font-semibold tracking-tight">Podpis dokumentu</h1>
         <p className="mt-2 text-zinc-500">
           Nahrajte dokument, vyznačte miesto na podpis a pošlite odkaz na podpísanie emailom.
         </p>
       </div>
 
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          handleFiles(e.dataTransfer.files);
-        }}
-        onClick={() => inputRef.current?.click()}
-        className={`flex w-full cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed px-8 py-16 text-center transition-colors ${
-          dragOver
-            ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-            : "border-zinc-300 dark:border-zinc-700"
-        }`}
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".pdf,.docx,.doc,.odt,.rtf"
-          className="hidden"
-          onChange={(e) => handleFiles(e.target.files)}
-        />
-        {uploading ? (
-          <p className="font-medium">Nahrávam a spracúvam dokument…</p>
-        ) : (
-          <>
-            <p className="font-medium">Presuňte sem súbor alebo kliknite pre výber</p>
-            <p className="text-sm text-zinc-500">Podporované formáty: PDF, DOCX, DOC, ODT, RTF</p>
-          </>
-        )}
-      </div>
+      {!isProtected && (
+        <p className="w-full rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          Aplikácia nie je chránená heslom — kto pozná jej adresu, vidí všetky dokumenty.
+          Heslo nastavíte položkou <code className="font-mono">APP_PASSWORD</code> v súbore{" "}
+          <code className="font-mono">.env.local</code>.
+        </p>
+      )}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <UploadArea />
 
       <DocumentList />
+
+      {isProtected && <LogoutButton />}
     </div>
   );
 }
