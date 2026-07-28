@@ -162,20 +162,53 @@ try {
         Show-Fail "Stranku sa nepodarilo spustit. Podrobnosti v subore: $serverLog"
     }
 
-    Start-Process $publicUrl
+    # --- Cakanie na dostupnost verejnej adresy ----------------------------
+    # Cloudflare adresu ohlasi skor, nez ju rozposle do DNS. Bez tohto cakania
+    # by sa prehliadac otvoril na adrese, ktora este neexistuje.
+    Show-Step "Overujem verejnu adresu, moze to trvat aj pol minuty..."
+    $publicReady = $false
+    for ($i = 0; $i -lt 30; $i++) {
+        try {
+            Invoke-WebRequest -Uri $publicUrl -UseBasicParsing -TimeoutSec 5 | Out-Null
+            $publicReady = $true
+            break
+        } catch {
+            Start-Sleep -Seconds 2
+        }
+    }
 
     Clear-Host
     Write-Host ""
-    Write-Host "  ============================================" -ForegroundColor DarkGray
-    Write-Host "     STRANKA BEZI" -ForegroundColor Green
-    Write-Host "  ============================================" -ForegroundColor DarkGray
-    Write-Host ""
-    Write-Host "  Otvorila sa v prehliadaci. Adresa:" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "  $publicUrl" -ForegroundColor White
-    Write-Host ""
-    Write-Host "  Tuto adresu mozes poslat aj na iny pocitac" -ForegroundColor Gray
-    Write-Host "  alebo otvorit v mobile." -ForegroundColor Gray
+    if ($publicReady) {
+        Start-Process $publicUrl
+        Write-Host "  ============================================" -ForegroundColor DarkGray
+        Write-Host "     STRANKA BEZI" -ForegroundColor Green
+        Write-Host "  ============================================" -ForegroundColor DarkGray
+        Write-Host ""
+        Write-Host "  Otvorila sa v prehliadaci. Adresa:" -ForegroundColor Gray
+        Write-Host ""
+        Write-Host "  $publicUrl" -ForegroundColor White
+        Write-Host ""
+        Write-Host "  Tuto adresu mozes poslat aj na iny pocitac" -ForegroundColor Gray
+        Write-Host "  alebo otvorit v mobile." -ForegroundColor Gray
+    } else {
+        Start-Process "http://localhost:3000"
+        Write-Host "  ============================================" -ForegroundColor DarkGray
+        Write-Host "     STRANKA BEZI - ale iba na tomto pocitaci" -ForegroundColor Yellow
+        Write-Host "  ============================================" -ForegroundColor DarkGray
+        Write-Host ""
+        Write-Host "  V prehliadaci sa otvorila miestna adresa:" -ForegroundColor Gray
+        Write-Host "  http://localhost:3000" -ForegroundColor White
+        Write-Host ""
+        Write-Host "  Verejna adresa zatial neodpoveda:" -ForegroundColor Gray
+        Write-Host "  $publicUrl" -ForegroundColor White
+        Write-Host ""
+        Write-Host "  Skus ju o chvilu otvorit rucne - niekedy sa" -ForegroundColor Gray
+        Write-Host "  rozbehne az po minute. Ak ani potom nejde," -ForegroundColor Gray
+        Write-Host "  blokuje ju zrejme tvoj poskytovatel internetu." -ForegroundColor Gray
+        Write-Host "  POZOR: odkazy v emailoch pouzivaju verejnu adresu," -ForegroundColor Yellow
+        Write-Host "  takze kym nefunguje, nefunguju ani ony." -ForegroundColor Yellow
+    }
     Write-Host ""
     Write-Host "  --------------------------------------------" -ForegroundColor DarkGray
     Write-Host "  TOTO OKNO NEZATVARAJ, kym pracujes." -ForegroundColor Yellow
