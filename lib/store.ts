@@ -63,6 +63,12 @@ export async function createDocument(data: {
   });
 }
 
+/** Všetky dokumenty, najnovšie ako prvé. */
+export async function listDocuments(): Promise<DocumentRecord[]> {
+  const db = await readDB();
+  return [...db.documents].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
 export async function getDocument(id: string): Promise<DocumentRecord | null> {
   const db = await readDB();
   return db.documents.find((d) => d.id === id) ?? null;

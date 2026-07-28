@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
-import { createDocument, documentDir } from "@/lib/store";
+import { createDocument, documentDir, listDocuments } from "@/lib/store";
 import { convertToPdf } from "@/lib/convertToPdf";
 
 export const runtime = "nodejs";
@@ -10,6 +10,22 @@ export const runtime = "nodejs";
 const PDF_EXTENSIONS = new Set([".pdf"]);
 const OFFICE_EXTENSIONS = new Set([".docx", ".doc", ".odt", ".rtf"]);
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
+
+export async function GET() {
+  const documents = await listDocuments();
+  return NextResponse.json(
+    documents.map((doc) => ({
+      id: doc.id,
+      originalFilename: doc.originalFilename,
+      status: doc.status,
+      createdAt: doc.createdAt,
+      signerEmail: doc.signerEmail ?? null,
+      signedAt: doc.signedAt ?? null,
+      signedByName: doc.signedByName ?? null,
+    })),
+    { headers: { "Cache-Control": "no-store" } },
+  );
+}
 
 export async function POST(request: Request) {
   const formData = await request.formData();

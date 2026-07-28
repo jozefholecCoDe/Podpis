@@ -71,7 +71,7 @@ export function SigningPad({
             <img
               src={signatureDataUrl}
               alt="Váš podpis"
-              className="h-full w-full object-fill"
+              className="h-full w-full object-contain"
             />
           ) : (
             <span className="px-1 text-center text-xs font-medium text-blue-700">
@@ -121,7 +121,6 @@ export function SigningPad({
 
       {modalOpen && (
         <SignatureModal
-          aspect={boxPx.height > 0 ? boxPx.width / boxPx.height : 2.5}
           onCancel={() => setModalOpen(false)}
           onConfirm={(dataUrl) => {
             setSignatureDataUrl(dataUrl);

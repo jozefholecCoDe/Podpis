@@ -10,6 +10,13 @@ Jednoduchá webová aplikácia na podpisovanie dokumentov:
    adresu, ktorú ste zadali pri odosielaní (ak ju necháte prázdnu, použije sa adresa
    `SMTP_FROM`, teda tá, z ktorej žiadosť o podpis odišla).
 6. Vy aj podpisujúci si môžete finálny podpísaný PDF navyše kedykoľvek stiahnuť.
+7. Na úvodnej stránke je zoznam všetkých dokumentov aj s ich stavom, takže sa k
+   podpísaným dokumentom dá vrátiť aj po reštarte aplikácie.
+
+> **Pozor na súkromie:** aplikácia nemá prihlasovanie. Kto pozná adresu, na ktorej beží,
+> vidí na úvodnej stránke zoznam všetkých dokumentov a môže si podpísané stiahnuť.
+> Ak posielate odkaz na podpis klientom, dostanú adresu, z ktorej sa dá odvodiť aj
+> úvodná stránka.
 
 Ak by odoslanie emailu s podpísaným dokumentom zlyhalo (napr. výpadok SMTP), podpis sa
 tým nezruší — dokument zostáva podpísaný, chyba sa zobrazí na stránke dokumentu a PDF sa

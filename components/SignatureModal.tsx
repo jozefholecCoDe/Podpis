@@ -1,45 +1,41 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { cropSignatureToInk } from "@/lib/cropSignature";
 
 /**
- * Hrúbka ťahu ako podiel šírky kresliacej plochy. Vďaka tomu vyjde čiara vo
- * výslednom PDF rovnako hrubá bez ohľadu na to, aké veľké okno má podpisujúci
- * k dispozícii — na mobile aj na monitore.
+ * Hrúbka ťahu ako podiel šírky kresliacej plochy — nie pevný počet pixelov,
+ * aby podpis z mobilu a z monitora vyzeral rovnako.
  */
-const SIGNATURE_LINE_RATIO = 0.0033;
+const SIGNATURE_LINE_RATIO = 0.004;
 const SIGNATURE_COLOR = "#0f172a";
 const SIGNATURE_SUPERSAMPLE = 3;
 
 export function SignatureModal({
-  aspect,
   onConfirm,
   onCancel,
 }: {
-  /** pomer strán podpisového rámčeka v dokumente, aby sa podpis nedeformoval */
-  aspect: number;
   onConfirm: (signatureDataUrl: string) => void;
   onCancel: () => void;
 }) {
-  const [size, setSize] = useState({ width: 480, height: 200 });
+  const [size, setSize] = useState({ width: 480, height: 320 });
   const [hasDrawn, setHasDrawn] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const isDrawingRef = useRef(false);
 
+  // Kresliaca plocha zaberá čo najviac miesta na obrazovke. Nekopíruje tvar
+  // rámčeka v dokumente — podpis sa pri vkladaní oreže a vsadí doň tak, aby si
+  // zachoval pomer strán.
   useEffect(() => {
-    const safeAspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 2.5;
-    const maxWidth = Math.min(window.innerWidth - 48, 640);
-    const maxHeight = Math.min(window.innerHeight * 0.5, 420);
-    let width = maxWidth;
-    let height = width / safeAspect;
-    if (height > maxHeight) {
-      height = maxHeight;
-      width = height * safeAspect;
-    }
+    const width = Math.min(window.innerWidth - 48, 1000);
+    const height = Math.min(window.innerHeight - 260, 620);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSize({ width: Math.round(width), height: Math.round(height) });
-  }, [aspect]);
+    setSize({
+      width: Math.round(Math.max(280, width)),
+      height: Math.round(Math.max(220, height)),
+    });
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -106,7 +102,7 @@ export function SignatureModal({
   function handleConfirm() {
     const canvas = canvasRef.current;
     if (!canvas || !hasDrawn) return;
-    onConfirm(canvas.toDataURL("image/png"));
+    onConfirm(cropSignatureToInk(canvas));
   }
 
   return (
@@ -115,7 +111,7 @@ export function SignatureModal({
       onClick={onCancel}
     >
       <div
-        className="flex w-full max-w-2xl flex-col items-center gap-4 rounded-xl bg-white p-5 shadow-xl dark:bg-zinc-900"
+        className="flex flex-col items-center gap-4 rounded-xl bg-white p-5 shadow-xl dark:bg-zinc-900"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-semibold">Podpíšte sa</h2>

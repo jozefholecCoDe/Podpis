@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { DocumentList } from "@/components/DocumentList";
 
 export default function UploadPage() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-6 px-6 py-16">
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center gap-8 px-6 py-16">
       <div className="text-center">
         <h1 className="text-3xl font-semibold tracking-tight">Podpis dokumentu</h1>
         <p className="mt-2 text-zinc-500">
@@ -76,6 +77,8 @@ export default function UploadPage() {
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <DocumentList />
     </div>
   );
 }

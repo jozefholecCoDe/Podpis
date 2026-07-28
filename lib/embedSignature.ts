@@ -7,6 +7,10 @@ import type { SignatureBox } from "./types";
  * (matching how browsers lay out the marking/signing overlay), while
  * pdf-lib places content relative to the page's bottom-left origin, hence
  * the flip below.
+ *
+ * The image is fitted inside the box and centred rather than stretched to
+ * fill it: the signer draws on a large pad whose shape has nothing to do with
+ * the box, so stretching would visibly distort their signature.
  */
 export async function embedSignatureImage(opts: {
   pdfBytes: Uint8Array;
@@ -28,11 +32,16 @@ export async function embedSignatureImage(opts: {
 
   const boxWidth = opts.box.width * pageWidth;
   const boxHeight = opts.box.height * pageHeight;
-  const x = opts.box.x * pageWidth;
-  const yFromTop = opts.box.y * pageHeight;
-  const y = pageHeight - yFromTop - boxHeight;
 
-  page.drawImage(pngImage, { x, y, width: boxWidth, height: boxHeight });
+  const fit = Math.min(boxWidth / pngImage.width, boxHeight / pngImage.height);
+  const drawWidth = pngImage.width * fit;
+  const drawHeight = pngImage.height * fit;
+
+  const x = opts.box.x * pageWidth + (boxWidth - drawWidth) / 2;
+  const yFromTop = opts.box.y * pageHeight + (boxHeight - drawHeight) / 2;
+  const y = pageHeight - yFromTop - drawHeight;
+
+  page.drawImage(pngImage, { x, y, width: drawWidth, height: drawHeight });
 
   return pdfDoc.save();
 }
