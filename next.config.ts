@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Vo vývojovom režime Next.js blokuje požiadavky na svoje interné súbory
+  // z inej adresy než localhost. Bez tohto by sa cez Cloudflare tunel načítalo
+  // HTML, ale nie JavaScript, a stránka by nereagovala na kliknutia.
+  allowedDevOrigins: ["*.trycloudflare.com"],
 };
 
 export default nextConfig;

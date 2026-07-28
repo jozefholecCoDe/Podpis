@@ -64,6 +64,33 @@ try {
         if ($LASTEXITCODE -ne 0) { Show-Fail "Instalacia balickov zlyhala." }
     }
 
+    # --- Priprava aplikacie -----------------------------------------------
+    # Bezi sa v produkcnom rezime (rychlejsi a bez vyvojovych obmedzeni).
+    # Zostavuje sa len vtedy, ked sa od posledneho zostavenia nieco zmenilo.
+    $buildId = Join-Path $projectRoot ".next\BUILD_ID"
+    $needsBuild = $true
+    if (Test-Path $buildId) {
+        $builtAt = (Get-Item $buildId).LastWriteTimeUtc
+        $watched = @()
+        foreach ($name in @("app", "components", "lib", "public")) {
+            $full = Join-Path $projectRoot $name
+            if (Test-Path $full) {
+                $watched += Get-ChildItem -Path $full -Recurse -File -ErrorAction SilentlyContinue
+            }
+        }
+        foreach ($name in @("package.json", "next.config.ts")) {
+            $full = Join-Path $projectRoot $name
+            if (Test-Path $full) { $watched += Get-Item $full }
+        }
+        $newest = ($watched | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1)
+        if ($newest -and $newest.LastWriteTimeUtc -le $builtAt) { $needsBuild = $false }
+    }
+    if ($needsBuild) {
+        Show-Step "Pripravujem aplikaciu, chvilu to potrva (len po aktualizacii)..."
+        & npm.cmd run build
+        if ($LASTEXITCODE -ne 0) { Show-Fail "Priprava aplikacie zlyhala." }
+    }
+
     # --- Tunel ------------------------------------------------------------
     # Tunel sa spusta ako prvy: verejna adresa musi byt zapisana do .env.local
     # skor, nez sa nastartuje server, aby odkazy v emailoch sedeli.
@@ -112,7 +139,7 @@ try {
     Show-Step "Spustam stranku..."
     Remove-Item $serverLog -ErrorAction SilentlyContinue
     $serverProcess = Start-Process -FilePath "npm.cmd" `
-        -ArgumentList "run", "dev" `
+        -ArgumentList "start" `
         -RedirectStandardOutput $serverLog `
         -RedirectStandardError "$serverLog.err" `
         -WindowStyle Hidden -PassThru

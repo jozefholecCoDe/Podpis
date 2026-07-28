@@ -26,6 +26,10 @@ Pre bežné používanie bez terminálu slúžia dva súbory v hlavnom priečink
   zapíše sa do `.env.local`, spustí sa server a stránka sa otvorí v prehliadači. Okno
   ostáva otvorené a zobrazuje adresu, ktorú je možné poslať aj na mobil. Stlačením Enter
   sa všetko korektne vypne.
+  Beží sa v **produkčnom režime** (`next build` + `next start`) — je rýchlejší a na rozdiel
+  od vývojového režimu neblokuje prístup z inej adresy než `localhost`. Zostavenie
+  prebehne automaticky pri prvom spustení a potom už len vtedy, keď sa zmenil zdrojový
+  kód, takže bežné spustenie je otázka sekúnd.
 - **`Zastavit-Podpis.bat`** — núdzové vypnutie, keď bolo okno zatvorené krížikom.
 
 Jednorazová príprava (stačí spraviť raz, na počítači, kde to bude bežať):
