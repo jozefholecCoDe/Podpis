@@ -3,6 +3,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { documentDir, getDocumentByToken, updateDocument } from "@/lib/store";
 import { embedSignatureImage } from "@/lib/embedSignature";
+import { getDefaultOwnerEmail, sendSignedDocumentEmail } from "@/lib/mail";
+import { signedFilename } from "@/lib/filenames";
+import { getBaseUrl } from "@/lib/url";
 
 export const runtime = "nodejs";
 
@@ -40,11 +43,45 @@ export async function POST(request: Request, ctx: RouteContext<"/api/sign/[token
   }
 
   await fs.writeFile(path.join(dir, "signed.pdf"), signedBytes);
+  const signedAt = new Date();
+  const finalSignedByName = signedByName || doc.signerName || "";
   await updateDocument(doc.id, {
     status: "signed",
-    signedAt: new Date().toISOString(),
-    signedByName: signedByName || doc.signerName,
+    signedAt: signedAt.toISOString(),
+    signedByName: finalSignedByName,
   });
 
-  return NextResponse.json({ ok: true });
+  // Mail the finished document back to whoever requested the signature. The
+  // document is already signed and stored at this point, so a mail failure is
+  // recorded and reported rather than failing the request — the signer has
+  // done their part and both sides can still download it.
+  const ownerEmail = doc.ownerEmail || getDefaultOwnerEmail();
+  let emailSent = false;
+  let emailError: string | null = null;
+
+  if (ownerEmail) {
+    try {
+      await sendSignedDocumentEmail({
+        to: ownerEmail,
+        documentName: doc.originalFilename,
+        signedByName: finalSignedByName,
+        signedAt,
+        documentUrl: `${getBaseUrl(request)}/documents/${doc.id}`,
+        pdfBytes: signedBytes,
+        attachmentFilename: signedFilename(doc.originalFilename),
+      });
+      emailSent = true;
+    } catch (err) {
+      emailError = err instanceof Error ? err.message : "Odoslanie emailu zlyhalo.";
+    }
+  } else {
+    emailError = "Nie je nastavená adresa, na ktorú sa má podpísaný dokument poslať.";
+  }
+
+  await updateDocument(doc.id, {
+    signedEmailSentAt: emailSent ? new Date().toISOString() : undefined,
+    signedEmailError: emailError ?? undefined,
+  });
+
+  return NextResponse.json({ ok: true, emailSent, emailError, sentTo: emailSent ? ownerEmail : null });
 }

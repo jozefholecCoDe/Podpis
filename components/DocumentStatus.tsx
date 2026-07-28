@@ -8,8 +8,11 @@ type DocInfo = {
   originalFilename: string;
   status: "draft" | "pending" | "signed";
   signerEmail: string | null;
+  ownerEmail: string | null;
   sentAt: string | null;
   signedAt: string | null;
+  signedEmailSentAt: string | null;
+  signedEmailError: string | null;
   signingUrl: string | null;
 };
 
@@ -95,6 +98,17 @@ export function DocumentStatus({ id }: { id: string }) {
       {doc.signedAt && (
         <p className="text-zinc-500">
           Podpísané {new Date(doc.signedAt).toLocaleString("sk-SK")}
+        </p>
+      )}
+      {doc.signedEmailSentAt && doc.ownerEmail && (
+        <p className="text-sm text-zinc-500">
+          Podpísaný dokument bol odoslaný emailom na <strong>{doc.ownerEmail}</strong>.
+        </p>
+      )}
+      {doc.signedEmailError && (
+        <p className="text-sm text-amber-600">
+          Podpísaný dokument sa nepodarilo odoslať emailom ({doc.signedEmailError}) — stiahnite si
+          ho nižšie.
         </p>
       )}
       <a

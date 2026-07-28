@@ -17,6 +17,7 @@ export function SigningView({ token }: { token: string }) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [signed, setSigned] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   useEffect(() => {
     fetch(`/api/sign/${token}`, { cache: "no-store" })
@@ -40,6 +41,7 @@ export function SigningView({ token }: { token: string }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Podpísanie zlyhalo.");
+      setEmailSent(Boolean(data.emailSent));
       setSigned(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Podpísanie zlyhalo.");
@@ -56,6 +58,11 @@ export function SigningView({ token }: { token: string }) {
       <div className="flex max-w-md flex-col items-center gap-3 text-center">
         <h2 className="text-xl font-semibold">Ďakujeme, dokument je podpísaný ✅</h2>
         <p className="text-zinc-500">{info.originalFilename}</p>
+        {emailSent && (
+          <p className="text-sm text-zinc-500">
+            Podpísaný dokument bol odoslaný späť odosielateľovi. Kópiu si môžete stiahnuť aj tu:
+          </p>
+        )}
         <a
           href={`/api/sign/${token}/download`}
           className="rounded bg-blue-600 px-4 py-2 font-medium text-white"

@@ -19,7 +19,13 @@ export type DocumentRecord = {
   signatureBox?: SignatureBox;
   signerName?: string;
   signerEmail?: string;
+  /** where the finished document is mailed back to once it has been signed */
+  ownerEmail?: string;
   sentAt?: string;
   signedAt?: string;
   signedByName?: string;
+  /** when the signed PDF was successfully mailed back to `ownerEmail` */
+  signedEmailSentAt?: string;
+  /** why mailing the signed PDF back failed, if it did */
+  signedEmailError?: string;
 };

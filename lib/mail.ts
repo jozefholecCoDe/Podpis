@@ -21,6 +21,14 @@ function getTransporter() {
   return transporter;
 }
 
+/**
+ * Address the signing request is sent *from*, and therefore the default
+ * address the finished document is returned to.
+ */
+export function getDefaultOwnerEmail() {
+  return process.env.SMTP_FROM || process.env.SMTP_USER || "";
+}
+
 export async function sendSigningEmail(opts: {
   to: string;
   signerName: string;
@@ -62,6 +70,54 @@ export async function sendSigningEmail(opts: {
         Odkaz je určený iba pre vás, nezdieľajte ho s nikým iným.
       </p>
     `,
+  });
+}
+
+export async function sendSignedDocumentEmail(opts: {
+  to: string;
+  documentName: string;
+  signedByName: string;
+  signedAt: Date;
+  documentUrl: string;
+  pdfBytes: Uint8Array;
+  attachmentFilename: string;
+}) {
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const signedAtLabel = opts.signedAt.toLocaleString("sk-SK");
+  const signedBy = opts.signedByName || "podpisujúcim";
+
+  await getTransporter().sendMail({
+    from,
+    to: opts.to,
+    subject: `Podpísaný dokument: ${opts.documentName}`,
+    text: [
+      "Dobrý deň,",
+      "",
+      `dokument "${opts.documentName}" bol podpísaný (${signedBy}, ${signedAtLabel}).`,
+      "Podpísaný dokument nájdete v prílohe tohto emailu.",
+      "",
+      "Stiahnuť ho môžete aj tu:",
+      opts.documentUrl,
+    ].join("\n"),
+    html: `
+      <p>Dobrý deň,</p>
+      <p>
+        dokument <strong>${escapeHtml(opts.documentName)}</strong> bol podpísaný
+        (${escapeHtml(signedBy)}, ${escapeHtml(signedAtLabel)}).
+        Podpísaný dokument nájdete v prílohe tohto emailu.
+      </p>
+      <p style="font-family:sans-serif;color:#6b7280;font-size:13px">
+        Stiahnuť ho môžete aj tu:<br />
+        <a href="${opts.documentUrl}">${opts.documentUrl}</a>
+      </p>
+    `,
+    attachments: [
+      {
+        filename: opts.attachmentFilename,
+        content: Buffer.from(opts.pdfBytes),
+        contentType: "application/pdf",
+      },
+    ],
   });
 }
 

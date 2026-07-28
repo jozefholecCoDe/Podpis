@@ -26,6 +26,7 @@ export function MarkSignatureEditor({
 
   const [signerName, setSignerName] = useState("");
   const [signerEmail, setSignerEmail] = useState("");
+  const [ownerEmail, setOwnerEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,8 +103,10 @@ export function MarkSignatureEditor({
       }
     : null;
 
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signerEmail);
-  const canSubmit = Boolean(box) && emailValid && !submitting;
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailValid = EMAIL_RE.test(signerEmail);
+  const ownerEmailValid = ownerEmail === "" || EMAIL_RE.test(ownerEmail);
+  const canSubmit = Boolean(box) && emailValid && ownerEmailValid && !submitting;
 
   async function handleSubmit() {
     if (!box) return;
@@ -113,7 +116,7 @@ export function MarkSignatureEditor({
       const res = await fetch(`/api/documents/${docId}/mark`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ box, signerName, signerEmail }),
+        body: JSON.stringify({ box, signerName, signerEmail, ownerEmail }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Odoslanie zlyhalo.");
@@ -219,7 +222,25 @@ export function MarkSignatureEditor({
           />
         </label>
 
+        <label className="flex flex-col gap-1 text-sm">
+          Kam poslať podpísaný dokument (nepovinné)
+          <input
+            type="email"
+            className="rounded border px-3 py-2"
+            value={ownerEmail}
+            onChange={(e) => setOwnerEmail(e.target.value)}
+            placeholder="vas-email@example.com"
+          />
+          <span className="text-xs text-zinc-500">
+            Po podpísaní sem príde podpísaný dokument ako príloha. Ak necháte prázdne, pošle sa
+            späť na adresu, z ktorej odchádza žiadosť o podpis.
+          </span>
+        </label>
+
         {!box && <p className="text-sm text-amber-600">Najprv vyznačte miesto na podpis.</p>}
+        {!ownerEmailValid && (
+          <p className="text-sm text-amber-600">Zadajte platný email alebo pole nechajte prázdne.</p>
+        )}
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <button

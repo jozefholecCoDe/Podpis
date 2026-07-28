@@ -6,7 +6,14 @@ Jednoduchá webová aplikácia na podpisovanie dokumentov:
 2. Kliknutím/ťahaním myšou vyznačíte na dokumente miesto, kam sa má vložiť podpis.
 3. Zadáte email podpisujúceho — aplikácia mu pošle odkaz na podpísanie.
 4. Podpisujúci otvorí odkaz, nakreslí podpis priamo do vyznačeného rámčeka a odošle.
-5. Vy aj podpisujúci si môžete stiahnuť finálny podpísaný PDF.
+5. Po podpísaní sa podpísaný PDF **automaticky odošle emailom späť** — ako príloha na
+   adresu, ktorú ste zadali pri odosielaní (ak ju necháte prázdnu, použije sa adresa
+   `SMTP_FROM`, teda tá, z ktorej žiadosť o podpis odišla).
+6. Vy aj podpisujúci si môžete finálny podpísaný PDF navyše kedykoľvek stiahnuť.
+
+Ak by odoslanie emailu s podpísaným dokumentom zlyhalo (napr. výpadok SMTP), podpis sa
+tým nezruší — dokument zostáva podpísaný, chyba sa zobrazí na stránke dokumentu a PDF sa
+dá stiahnuť.
 
 Postavené na Next.js (App Router), `pdf-lib` (vkladanie podpisu do PDF), `pdfjs-dist`
 (zobrazenie PDF v prehliadači) a `nodemailer` (odoslanie emailu).
@@ -46,7 +53,7 @@ Postavené na Next.js (App Router), `pdf-lib` (vkladanie podpisu do PDF), `pdfjs
 | `SMTP_USER`      | Prihlasovacie meno / email                                            |
 | `SMTP_PASS`      | Heslo / App Password                                                  |
 | `SMTP_SECURE`    | `true` pre port 465 (SSL), inak nechajte prázdne (STARTTLS na 587)     |
-| `SMTP_FROM`      | Adresa odosielateľa v emaile (ak chýba, použije sa `SMTP_USER`)        |
+| `SMTP_FROM`      | Adresa odosielateľa v emaile (ak chýba, použije sa `SMTP_USER`). Zároveň je to predvolená adresa, na ktorú sa vráti podpísaný dokument. |
 | `APP_BASE_URL`   | Verejná URL aplikácie použitá v odkaze na podpis (napr. `https://podpis.example.com`). Ak chýba, odvodí sa z požiadavky. |
 
 ### Gmail App Password

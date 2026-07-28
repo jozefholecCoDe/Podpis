@@ -21,8 +21,11 @@ export async function GET(request: Request, ctx: RouteContext<"/api/documents/[i
     signatureBox: doc.signatureBox ?? null,
     signerName: doc.signerName ?? null,
     signerEmail: doc.signerEmail ?? null,
+    ownerEmail: doc.ownerEmail ?? null,
     sentAt: doc.sentAt ?? null,
     signedAt: doc.signedAt ?? null,
+    signedEmailSentAt: doc.signedEmailSentAt ?? null,
+    signedEmailError: doc.signedEmailError ?? null,
     signingUrl,
   });
 }

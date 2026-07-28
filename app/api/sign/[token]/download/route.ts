@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { documentDir, getDocumentByToken } from "@/lib/store";
+import { contentDisposition, signedFilename } from "@/lib/filenames";
 
 export const runtime = "nodejs";
 
@@ -18,7 +19,10 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/sign/[token
   return new NextResponse(new Blob([bytes]), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="podpisany-${encodeURIComponent(doc.originalFilename)}.pdf"`,
+      "Content-Disposition": contentDisposition(
+        "attachment",
+        signedFilename(doc.originalFilename),
+      ),
       "Cache-Control": "no-store",
     },
   });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDocument, updateDocument } from "@/lib/store";
-import { sendSigningEmail } from "@/lib/mail";
+import { getDefaultOwnerEmail, sendSigningEmail } from "@/lib/mail";
 import { getBaseUrl } from "@/lib/url";
 import type { SignatureBox } from "@/lib/types";
 
@@ -33,6 +33,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/documents/[
   const box = body?.box;
   const signerName = typeof body?.signerName === "string" ? body.signerName.trim() : "";
   const signerEmail = typeof body?.signerEmail === "string" ? body.signerEmail.trim() : "";
+  const ownerEmailInput = typeof body?.ownerEmail === "string" ? body.ownerEmail.trim() : "";
 
   if (!isValidBox(box)) {
     return NextResponse.json({ error: "Neplatné miesto na podpis." }, { status: 400 });
@@ -40,6 +41,15 @@ export async function POST(request: Request, ctx: RouteContext<"/api/documents/[
   if (!signerEmail || !EMAIL_RE.test(signerEmail)) {
     return NextResponse.json({ error: "Zadajte platný email podpisujúceho." }, { status: 400 });
   }
+  if (ownerEmailInput && !EMAIL_RE.test(ownerEmailInput)) {
+    return NextResponse.json(
+      { error: "Zadajte platný email pre doručenie podpísaného dokumentu." },
+      { status: 400 },
+    );
+  }
+
+  // Left blank, the signed document goes back to the address it was sent from.
+  const ownerEmail = ownerEmailInput || getDefaultOwnerEmail();
 
   const signingUrl = `${getBaseUrl(request)}/sign/${doc.token}`;
 
@@ -59,6 +69,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/documents/[
     signatureBox: box,
     signerName,
     signerEmail,
+    ownerEmail,
     status: "pending",
     sentAt: new Date().toISOString(),
   });
