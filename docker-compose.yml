@@ -1,0 +1,15 @@
+services:
+  podpis:
+    build: .
+    restart: unless-stopped
+    ports:
+      # Vonku počúva len na localhote; navonok to vystaví reverzná proxy,
+      # ktorá sa stará aj o HTTPS certifikát.
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - .env.local
+    volumes:
+      - podpis-data:/app/data
+
+volumes:
+  podpis-data:

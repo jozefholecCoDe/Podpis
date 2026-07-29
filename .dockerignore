@@ -1,0 +1,20 @@
+node_modules
+.next
+.git
+.gitignore
+
+# nahraté dokumenty patria na zväzok, nie do obrazu
+data
+
+# heslá sa do obrazu nesmú zapiecť, dodávajú sa až pri spustení
+.env
+.env.*
+!.env.example
+
+# spúšťače pre Windows
+*.bat
+scripts
+
+README.md
+AGENTS.md
+CLAUDE.md
