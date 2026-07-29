@@ -55,32 +55,22 @@ copy .env.example .env.local   # a vyplniť SMTP údaje
 Adresa tunela sa pri každom spustení mení — skript ju preto zakaždým prepíše sám.
 Odkazy na podpis odoslané pri predchádzajúcom behu prestanú po reštarte fungovať.
 
-## Nasadenie na server (Docker)
+## Nasadenie na server (odporúčané)
 
-Spoľahlivejšia alternatíva k tunelu: aplikácia beží na serveri s vlastnou adresou,
-takže nezávisí od siete, na ktorej je práve váš počítač.
+Aplikácia beží nonstop na vlastnej doméne, nezávisle od domáceho počítača a siete.
+Podrobný návod krok za krokom je v **[NASADENIE.md](NASADENIE.md)**; v skratke:
 
 ```bash
-cp .env.example .env.local     # vyplniť APP_PASSWORD a SMTP údaje
+cp .env.example .env     # vyplniť DOMAIN, APP_PASSWORD a SMTP údaje
 docker compose up -d --build
 ```
 
-Aplikácia potom počúva na `127.0.0.1:3000`. Navonok ju vystavte reverznou proxy
-(Caddy, Nginx Proxy Manager, Traefik), ktorá zabezpečí doménu a HTTPS certifikát.
-S vlastnou doménou už netreba vypĺňať `APP_BASE_URL` — adresa sa odvodí z hlavičiek,
-ktoré proxy posiela.
+Súčasťou je Caddy, ktorý vybaví doménu aj HTTPS certifikát (vrátane obnovovania).
+LibreOffice je v obraze, netreba ho inštalovať zvlášť.
 
-Dôležité: dokumenty sa ukladajú do zväzku `podpis-data` pripojeného na `/app/data`.
-Bez trvalého úložiska by sa pri reštarte kontajnera stratili, preto **serverless
-platformy bez disku (napr. Vercel) nie sú vhodné**. LibreOffice je súčasťou obrazu,
-netreba ho inštalovať zvlášť.
-
-Zálohovanie:
-
-```bash
-docker run --rm -v podpis-data:/data -v "$PWD":/zaloha alpine \
-  tar czf /zaloha/podpis-zaloha.tar.gz -C /data .
-```
+Dokumenty sa ukladajú do zväzku `podpis-data` na `/app/data`. Bez trvalého úložiska
+by sa pri reštarte stratili, preto **serverless platformy bez disku (napr. Vercel)
+nie sú vhodné**.
 
 ## Požiadavky
 

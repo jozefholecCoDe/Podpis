@@ -1,0 +1,4 @@
+# Caddy si sám vybaví a obnovuje HTTPS certifikát pre uvedenú doménu.
+{$DOMAIN} {
+	reverse_proxy podpis:3000
+}

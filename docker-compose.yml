@@ -2,14 +2,31 @@ services:
   podpis:
     build: .
     restart: unless-stopped
-    ports:
-      # Vonku počúva len na localhote; navonok to vystaví reverzná proxy,
-      # ktorá sa stará aj o HTTPS certifikát.
-      - "127.0.0.1:3000:3000"
     env_file:
-      - .env.local
+      - .env
     volumes:
       - podpis-data:/app/data
+    expose:
+      - "3000"
+
+  # Vybavuje doménu a HTTPS certifikát. Certifikát si vyžiada aj obnovuje sám,
+  # netreba naň myslieť.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - podpis
 
 volumes:
   podpis-data:
+  caddy-data:
+  caddy-config:
