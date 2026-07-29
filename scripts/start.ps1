@@ -21,6 +21,7 @@ $serverLog = Join-Path $env:TEMP "podpis-server.log"
 
 $tunnelProcess = $null
 $serverProcess = $null
+$tunnelError = ""
 
 function Show-Step($text) {
     Write-Host ""
@@ -66,8 +67,17 @@ function Connect-Tunnel($protocol) {
     for ($i = 0; $i -lt 60; $i++) {
         Start-Sleep -Milliseconds 500
         $log = Get-Content $tunnelLog -Raw -ErrorAction SilentlyContinue
-        if ($log -and $log -match "https://[-a-z0-9]+\.trycloudflare\.com") {
-            return $Matches[0]
+        if ($log) {
+            # Vylucenie api.trycloudflare.com: ta adresa sa objavuje v chybovych
+            # hlaskach a nie je to adresa naseho tunela.
+            if ($log -match "https://(?!api\.)[-a-z0-9]+\.trycloudflare\.com") {
+                return $Matches[0]
+            }
+            # Ked Cloudflare odmietne poziadavku, nema zmysel cakat do konca.
+            if ($log -match "failed to request quick Tunnel:\s*(.+)") {
+                $script:tunnelError = $Matches[1].Trim()
+                return $null
+            }
         }
         if ($script:tunnelProcess.HasExited) { return $null }
     }
@@ -143,13 +153,22 @@ try {
         $publicUrl = Connect-Tunnel "http2"
     }
     if (-not $publicUrl) {
-        $tail = (Get-Content $tunnelLog -Tail 6 -ErrorAction SilentlyContinue) -join "`n  "
+        $detail = if ($tunnelError) { $tunnelError } else {
+            (Get-Content $tunnelLog -Tail 4 -ErrorAction SilentlyContinue) -join "`n  "
+        }
+        $hint = "Tato siet zrejme blokuje spojenie na Cloudflare."
+        if ($tunnelError -match "certificate") {
+            $hint = @"
+Tato siet rozbaluje sifrovane spojenia (podstrkuje vlastny
+  certifikat), a cloudflared to z bezpecnostnych dovodov odmieta.
+  Skus sa pripojit cez mobilny hotspot - cez neho to pojde.
+"@
+        }
         Show-Fail @"
 Nepodarilo sa vytvorit verejnu adresu.
-  Tato siet zrejme blokuje spojenie na Cloudflare.
+  $hint
 
-  Posledne riadky z logu:
-  $tail
+  Hlaska: $detail
 
   Cely log: $tunnelLog
 "@
