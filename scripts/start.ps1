@@ -44,6 +44,36 @@ function Stop-Tree($process) {
     }
 }
 
+<#
+    Spusti cloudflared a pocka na verejnu adresu. Vrati adresu, alebo $null,
+    ak sa spojenie nepodarilo nadviazat. Bezici proces si odklada do
+    $script:tunnelProcess, aby sa dal na konci korektne ukoncit.
+#>
+function Connect-Tunnel($protocol) {
+    Stop-Tree $script:tunnelProcess
+    $script:tunnelProcess = $null
+    Remove-Item $tunnelLog -ErrorAction SilentlyContinue
+
+    $arguments = @("tunnel", "--url", "http://localhost:3000")
+    if ($protocol) { $arguments += @("--protocol", $protocol) }
+
+    $script:tunnelProcess = Start-Process -FilePath "cloudflared" `
+        -ArgumentList $arguments `
+        -RedirectStandardError $tunnelLog `
+        -RedirectStandardOutput "$tunnelLog.out" `
+        -WindowStyle Hidden -PassThru
+
+    for ($i = 0; $i -lt 60; $i++) {
+        Start-Sleep -Milliseconds 500
+        $log = Get-Content $tunnelLog -Raw -ErrorAction SilentlyContinue
+        if ($log -and $log -match "https://[-a-z0-9]+\.trycloudflare\.com") {
+            return $Matches[0]
+        }
+        if ($script:tunnelProcess.HasExited) { return $null }
+    }
+    return $null
+}
+
 Clear-Host
 Write-Host ""
 Write-Host "  ============================================" -ForegroundColor DarkGray
@@ -104,25 +134,25 @@ try {
     # Tunel sa spusta ako prvy: verejna adresa musi byt zapisana do .env.local
     # skor, nez sa nastartuje server, aby odkazy v emailoch sedeli.
     Show-Step "Pripajam sa na internet..."
-    Remove-Item $tunnelLog -ErrorAction SilentlyContinue
-    $tunnelProcess = Start-Process -FilePath "cloudflared" `
-        -ArgumentList "tunnel", "--url", "http://localhost:3000" `
-        -RedirectStandardError $tunnelLog `
-        -RedirectStandardOutput "$tunnelLog.out" `
-        -WindowStyle Hidden -PassThru
-
-    $publicUrl = $null
-    for ($i = 0; $i -lt 60; $i++) {
-        Start-Sleep -Milliseconds 500
-        if ($tunnelProcess.HasExited) { break }
-        $log = Get-Content $tunnelLog -Raw -ErrorAction SilentlyContinue
-        if ($log -and $log -match "https://[-a-z0-9]+\.trycloudflare\.com") {
-            $publicUrl = $Matches[0]
-            break
-        }
+    $publicUrl = Connect-Tunnel $null
+    if (-not $publicUrl) {
+        # Cloudflared standardne pouziva QUIC cez UDP, ktore firewally na
+        # firemnych a verejnych sietach casto zahadzuju. HTTP/2 cez TCP 443
+        # prejde aj tam.
+        Show-Step "Nepodarilo sa, skusam nahradne pripojenie..."
+        $publicUrl = Connect-Tunnel "http2"
     }
     if (-not $publicUrl) {
-        Show-Fail "Nepodarilo sa vytvorit verejnu adresu. Skontroluj pripojenie na internet a skus znova."
+        $tail = (Get-Content $tunnelLog -Tail 6 -ErrorAction SilentlyContinue) -join "`n  "
+        Show-Fail @"
+Nepodarilo sa vytvorit verejnu adresu.
+  Tato siet zrejme blokuje spojenie na Cloudflare.
+
+  Posledne riadky z logu:
+  $tail
+
+  Cely log: $tunnelLog
+"@
     }
 
     # --- Zapis adresy do .env.local ---------------------------------------
