@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDocument, updateDocument } from "@/lib/store";
 import { getDefaultOwnerEmail, sendSigningEmail } from "@/lib/mail";
 import { getBaseUrl } from "@/lib/url";
+import { EMAIL_MESSAGE_MAX, EMAIL_SUBJECT_MAX } from "@/lib/emailDefaults";
 import type { SignatureBox } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -53,12 +54,22 @@ export async function POST(request: Request, ctx: RouteContext<"/api/documents/[
 
   const signingUrl = `${getBaseUrl(request)}/sign/${doc.token}`;
 
+  const emailSubject =
+    typeof body?.emailSubject === "string"
+      ? body.emailSubject.trim().slice(0, EMAIL_SUBJECT_MAX)
+      : "";
+  const emailMessage =
+    typeof body?.emailMessage === "string"
+      ? body.emailMessage.trim().slice(0, EMAIL_MESSAGE_MAX)
+      : "";
+
   try {
     await sendSigningEmail({
       to: signerEmail,
-      signerName,
       documentName: doc.originalFilename,
       signingUrl,
+      subject: emailSubject,
+      message: emailMessage,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Odoslanie emailu zlyhalo.";

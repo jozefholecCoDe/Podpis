@@ -52,6 +52,7 @@ export function DocumentStatus({ id }: { id: string }) {
     return (
       <MarkSignatureEditor
         docId={doc.id}
+        documentName={doc.originalFilename}
         fileUrl={`/api/documents/${doc.id}/file`}
         onSent={() => refresh()}
       />

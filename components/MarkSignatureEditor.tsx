@@ -4,15 +4,23 @@ import { useEffect, useRef, useState } from "react";
 import { usePdfDocument } from "@/lib/usePdfDocument";
 import { PdfCanvas } from "@/components/PdfCanvas";
 import type { SignatureBox } from "@/lib/types";
+import {
+  defaultEmailMessage,
+  defaultEmailSubject,
+  EMAIL_MESSAGE_MAX,
+  EMAIL_SUBJECT_MAX,
+} from "@/lib/emailDefaults";
 
 type DragState = { startX: number; startY: number; curX: number; curY: number };
 
 export function MarkSignatureEditor({
   docId,
+  documentName,
   fileUrl,
   onSent,
 }: {
   docId: string;
+  documentName: string;
   fileUrl: string;
   onSent: (signingUrl: string) => void;
 }) {
@@ -27,6 +35,8 @@ export function MarkSignatureEditor({
   const [signerName, setSignerName] = useState("");
   const [signerEmail, setSignerEmail] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
+  const [emailSubject, setEmailSubject] = useState(() => defaultEmailSubject(documentName));
+  const [emailMessage, setEmailMessage] = useState(() => defaultEmailMessage(documentName));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -116,7 +126,14 @@ export function MarkSignatureEditor({
       const res = await fetch(`/api/documents/${docId}/mark`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ box, signerName, signerEmail, ownerEmail }),
+        body: JSON.stringify({
+          box,
+          signerName,
+          signerEmail,
+          ownerEmail,
+          emailSubject,
+          emailMessage,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Odoslanie zlyhalo.");
@@ -199,7 +216,7 @@ export function MarkSignatureEditor({
         </p>
       </div>
 
-      <div className="flex w-full max-w-sm flex-col gap-3">
+      <div className="flex w-full max-w-md flex-col gap-3">
         <h2 className="text-lg font-semibold">Odoslať na podpis</h2>
         <label className="flex flex-col gap-1 text-sm">
           Meno podpisujúceho (nepovinné)
@@ -234,6 +251,30 @@ export function MarkSignatureEditor({
           <span className="text-xs text-zinc-500">
             Po podpísaní sem príde podpísaný dokument ako príloha. Ak necháte prázdne, pošle sa
             späť na adresu, z ktorej odchádza žiadosť o podpis.
+          </span>
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm">
+          Predmet emailu
+          <input
+            className="rounded border px-3 py-2"
+            value={emailSubject}
+            maxLength={EMAIL_SUBJECT_MAX}
+            onChange={(e) => setEmailSubject(e.target.value)}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm">
+          Text emailu
+          <textarea
+            rows={7}
+            className="rounded border px-3 py-2 font-sans"
+            value={emailMessage}
+            maxLength={EMAIL_MESSAGE_MAX}
+            onChange={(e) => setEmailMessage(e.target.value)}
+          />
+          <span className="text-xs text-zinc-500">
+            Tlačidlo s odkazom na podpísanie sa pridá automaticky pod tento text.
           </span>
         </label>
 

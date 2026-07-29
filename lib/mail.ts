@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { defaultEmailMessage, defaultEmailSubject } from "./emailDefaults";
 
 let transporter: nodemailer.Transporter | null = null;
 
@@ -31,21 +32,23 @@ export function getDefaultOwnerEmail() {
 
 export async function sendSigningEmail(opts: {
   to: string;
-  signerName: string;
   documentName: string;
   signingUrl: string;
+  /** vlastný predmet; ak chýba, použije sa predvolený */
+  subject?: string;
+  /** vlastný text správy; odkaz na podpis sa pripája automaticky pod ňu */
+  message?: string;
 }) {
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-  const greetingName = opts.signerName ? ` ${opts.signerName}` : "";
+  const subject = opts.subject?.trim() || defaultEmailSubject(opts.documentName);
+  const message = opts.message?.trim() || defaultEmailMessage(opts.documentName);
 
   await getTransporter().sendMail({
     from,
     to: opts.to,
-    subject: `Žiadosť o podpis dokumentu: ${opts.documentName}`,
+    subject,
     text: [
-      `Dobrý deň${greetingName},`,
-      "",
-      `boli ste požiadaní o podpísanie dokumentu "${opts.documentName}".`,
+      message,
       "",
       "Dokument otvoríte a podpíšete cez tento odkaz:",
       opts.signingUrl,
@@ -53,9 +56,8 @@ export async function sendSigningEmail(opts: {
       "Odkaz je určený iba pre vás, nezdieľajte ho s nikým iným.",
     ].join("\n"),
     html: `
-      <p>Dobrý deň${greetingName},</p>
-      <p>boli ste požiadaní o podpísanie dokumentu <strong>${escapeHtml(opts.documentName)}</strong>.</p>
-      <p>
+      <div style="font-family:sans-serif;white-space:pre-wrap">${escapeHtml(message)}</div>
+      <p style="margin-top:20px">
         <a href="${opts.signingUrl}"
            style="display:inline-block;padding:10px 20px;background:#111827;color:#ffffff;
                   border-radius:6px;text-decoration:none;font-family:sans-serif">
